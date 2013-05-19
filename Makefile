@@ -1,19 +1,18 @@
 # tested with GNU make 3.81
 SHELL   = /usr/bin/env sh
 CC      = clang
-CFLAGS  = -g  -Wall -Wextra -pedantic -std=c99
 LD      = clang
+PREFIX  = ./
+LIBS    = $(PREFIX)lib
+INCS    = $(PREFIX)include
+CFLAGS  = -g  -Wall -Wextra -pedantic -std=c99 -I$(INCS)
 
-#### targets and prerequisites ####
-TEMP        = $(shell find . -name '*.c' |  tr '\n' ' ')
-OBJECTS     = $(TEMP:.c=.o)
-EXECUTABLES = $(TEMP:.c=))
+all: bin/prf
 
-bin/prf : % : src/prf.o
-	$(LD) $< -o $@
+bin/prf : % : src/prf.o $(LIBS)/get-random-file.o $(LIBS)/prf-config.o
+	$(LD) $^ -o $@
 
-#### compiled object files ####
-$(OBJECTS) : %.o : %.c
+src/prf.o: %.o : %.c $(INCS)/get-random-file.h $(INCS)/prf-config.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONY : clean clean-obj clean-bin
@@ -27,3 +26,5 @@ clean-obj:
 
 clean-bin:
 	@find . -perm +111 -type f | grep -vE "\.(git|sh|rb)" | $(XARGS_RM)
+
+include $(LIBS)/makefile

@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "prf-config.h"
 
-char *get_random_file(char *[], char *[]);
+char *get_random_file(PrfConfig);
+
 #endif

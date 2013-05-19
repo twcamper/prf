@@ -1,9 +1,9 @@
-#include "get-random-file.h"
 #include "prf-config.h"
+#include "get-random-file.h"
 
 int main(int argc, char *argv[])
 {
   PrfConfig config = read_configuration(argc, argv);
-  puts(get_random_file(config.path, config.ext));
+  puts(get_random_file(config));
   return 0;
 }
