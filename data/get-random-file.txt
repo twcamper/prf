@@ -1,0 +1,47 @@
+1250 files in 419 dirs
+
+#######################################
+RUBY SCRIPT
+#######################################
+$ time ./bin/get_random_tune.rb 
+/Users/timothycamper/Music/rock/Cream- Gold (2Cd)/Disc 1/04. I'm So Glad.flac
+
+real0m0.026s
+user0m0.005s
+sys0m0.013s
+
+$ time ./bin/get_random_tune.rb 
+/Users/timothycamper/Music/baroque/Bach_ Goldberg Variations/30-Bach_ Goldberg Variations, BWV 988 - Var. 29.flac
+
+real0m0.020s
+user0m0.006s
+sys0m0.012s
+
+$ time ./bin/get_random_tune.rb 
+/Users/timothycamper/Music/jazz/Joe Pass Virtuoso(jazz)(flac)[rogercc][h33t]/05 How High The Moon.flac
+
+real0m0.020s
+user0m0.006s
+sys0m0.012s
+
+$ time ./bin/get_random_tune.rb 
+/Users/timothycamper/Music/jazz/Smithsonian Collection Of Classic Jazz [Disc 3]/16-Klactoveedsedstene.flac
+
+real0m0.021s
+user0m0.007s
+sys0m0.013s
+
+$ time ./bin/get_random_tune.rb 
+/Users/timothycamper/Music/baroque/Yo-Yo Ma/Bach- Six Unaccompanied Cello Suites/10 Nummer 10.flac
+
+real0m0.019s
+user0m0.006s
+sys0m0.013s
+
+$ time ./bin/get_random_tune_random_tune.rb 
+/Users/timothycamper/Music/jazz/Smithsonian Collection Of Classic Jazz [Disc 2]/14-Too Marvelous For Words.flac
+
+real0m0.020s
+user0m0.006s
+sys0m0.012s
+
