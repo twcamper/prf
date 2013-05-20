@@ -23,6 +23,7 @@ static char *find_file(glob_t entries, char **ext, size_t extension_count)
   size_t tried[BUFSIZ], tried_count = 0;
   size_t entry;
   char dir_glob[PATH_MAX + 2];
+  static char path[FILENAME_MAX + 1];
   struct stat fs;
 
   while (tried_count < entries.gl_pathc) {
@@ -46,6 +47,7 @@ static char *find_file(glob_t entries, char **ext, size_t extension_count)
     if (S_ISDIR(fs.st_mode)) {
       strcpy(dir_glob, entries.gl_pathv[entry]);
       strncat(dir_glob, "*", 1);
+      globfree(&entries);
       errno = 0;
       if ((glob(dir_glob, GLOB_MARK|GLOB_ERR, NULL, &entries) != 0
            || (&entries && entries.gl_pathc == 0))) {
@@ -60,7 +62,9 @@ static char *find_file(glob_t entries, char **ext, size_t extension_count)
     /* we're done if it's a regular file with a good extension */
     if (S_ISREG(fs.st_mode)) {
       if (can_play(ext, extension_count, entries.gl_pathv[entry])) {
-        return entries.gl_pathv[entry];
+        strcpy(path, entries.gl_pathv[entry]);
+        globfree(&entries);
+        return path;
       }
     }
   }
