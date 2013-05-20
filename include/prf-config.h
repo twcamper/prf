@@ -2,14 +2,17 @@
 #define PRF_CONFIG_H
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <glob.h>
+#include <errno.h>
+#include <string.h>
 
 #define MAX_PATHS 1024      /* researching system defined limit for bash */
 #define MAX_EXTENSIONS 256  /* researching system defined limit for bash */
 typedef struct prf_config {
   size_t extension_count;
   char *ext[MAX_EXTENSIONS];
-  size_t path_count;
-  char *path[MAX_PATHS];
+  glob_t entries;
 } PrfConfig;
 
 PrfConfig read_configuration(int argc, char *argv[]);
