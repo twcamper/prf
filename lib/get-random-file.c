@@ -1,5 +1,4 @@
 #include "get-random-file.h"
-#define FILE_SEPARATOR "/"
 
 static bool can_play(char *ext[], size_t n, char *filename)
 {
@@ -46,10 +45,9 @@ static char *find_file(glob_t entries, char **ext, size_t extension_count)
     /* get new set of entries if it's another directory */
     if (S_ISDIR(fs.st_mode)) {
       strcpy(dir_glob, entries.gl_pathv[entry]);
-      strncat(dir_glob, FILE_SEPARATOR, 1);
       strncat(dir_glob, "*", 1);
       errno = 0;
-      if ((glob(dir_glob, GLOB_BRACE|GLOB_ERR, NULL, &entries) != 0
+      if ((glob(dir_glob, GLOB_MARK|GLOB_ERR, NULL, &entries) != 0
            || (&entries && entries.gl_pathc == 0))) {
         /* not getting GLOB_NOMATCH, so resort to testing count of paths found */
         fprintf(stderr, "%s:%d glob: %s '%s'\n", __FILE__, __LINE__, strerror(errno), dir_glob);
