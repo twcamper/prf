@@ -12,4 +12,6 @@ The search path, list of file extensions, and player associations are all
 configurable from the command line or a file.  The config file can be
 specified on the command line or in the shell environment.
 
-<img src="./data/Parlophfornoreason.jpg" height="348" width="357" alt="For Nor Reason At All In C"/>
+<a href="http://en.wikipedia.org/wiki/For_No_Reason_at_All_in_C">
+  <img src="./data/Parlophfornoreason.jpg" height="260" width="266" alt="For Nor Reason At All In C" title="Well, C is kind of fun, actually."/>
+</a>
