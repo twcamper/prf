@@ -11,3 +11,5 @@ This is a C project to give me some practice with the file system interface.
 The search path, list of file extensions, and player associations are all
 configurable from the command line or a file.  The config file can be
 specified on the command line or in the shell environment.
+
+<img src="./data/Parlophfornoreason.jpg" height="348" width="357" alt="For Nor Reason At All In C"/>
