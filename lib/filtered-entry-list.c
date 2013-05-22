@@ -1,0 +1,120 @@
+#include "filtered-entry-list.h"
+
+struct filtered_entry_list_type {
+  size_t allocated;
+  size_t available;
+  ListItem *entries[];
+};
+
+static void print_error(char *f, long l, char *msg)
+{
+  fprintf(stderr, "%s:%ld \t", f, l);
+  perror(msg);
+}
+static bool has_good_extension(char *f, char *ext[])
+{
+  char *dot_ptr;
+
+  return true;
+}
+
+FilteredEntryList filtered_entry_list(char *dir, char **ext)
+{
+  DIR *dir_ptr;
+  FilteredEntryList list = NULL;  /* NULL so first call to realloc is a malloc */
+  struct dirent *entry_ptr;
+  struct stat fs;
+  char path[FILENAME_MAX];
+  size_t allocated;  /* local count, since the struct member
+                      * won't exist yet on first call to realloc
+                      */
+  if (!dir) {
+    print_error(__FILE__, __LINE__, "dir parameter is NULL");
+    return NULL;
+  }
+
+  /* Open the Directory */
+  errno = 0;
+  if ((dir_ptr = opendir(dir)) == NULL) {
+    print_error(__FILE__, __LINE__, dir);
+    return NULL;
+  }
+  /* store absolute path in our temp buffer, 
+   * which will begin each entry below
+   */
+  strcpy(path, dir);
+  int pathlen = strlen(path);
+  if (path[pathlen - 1] != '/') {
+    strcat(path, "/");
+    pathlen++;
+  }
+  allocated = 0;
+  while  ((entry_ptr = readdir(dir_ptr))) {
+    /* ignore self and parent */
+    if (strcmp(entry_ptr->d_name, ".") == 0 || strcmp(entry_ptr->d_name, "..") == 0)
+      continue;
+
+    /* build absolute path to entry */
+    path[pathlen] = '\0';
+    strcat(path, entry_ptr->d_name);
+
+    /* stat the file */
+    errno = 0;
+    if (stat(path, &fs)) {
+      print_error(__FILE__, __LINE__, path);
+      continue;  /* try the next one upon error */
+    }
+
+    /* filter the file */
+    if ( S_ISDIR(fs.st_mode) ||
+        (S_ISREG(fs.st_mode) && has_good_extension(path, ext))) {
+
+      /* grow the entries list to hold another item pointer */
+      if (!(list = realloc(list,
+                           sizeof(struct filtered_entry_list_type) +
+                           ((allocated + 1) * sizeof(ListItem *)))))
+        print_error(__FILE__, __LINE__, "realloc() on entries list");
+
+      /* store a new list item in the new slot in the entries list */
+      if (!(list->entries[allocated] = malloc(sizeof(ListItem) +
+                                       (sizeof(char) * (strlen(path) + 1)))))
+        print_error(__FILE__, __LINE__, "malloc() on ListItem");
+
+      /* populate the new item */
+      strcpy(list->entries[allocated]->file_name, path);
+      list->entries[allocated]->is_dir = false;
+      if (S_ISDIR(fs.st_mode))
+        list->entries[allocated]->is_dir = true;
+
+      /* count the allocation */
+      allocated++;
+    }
+  }
+
+  /* set count fields now that the struct is created */
+  list->allocated = allocated;
+  list->available = list->allocated;
+
+  /* Close the Directory */
+  errno = 0;
+  if (closedir(dir_ptr) != 0) {
+    print_error(__FILE__, __LINE__, dir);
+    return NULL;
+  }
+  return list;
+}
+
+void print_list(FilteredEntryList list)
+{
+  size_t i;
+  printf("Size: %ld\n", list->allocated);
+  for (i = 0; i < list->allocated; i++)
+    printf("%d: %s\n", list->entries[i]->is_dir, list->entries[i]->file_name);
+}
+
+void destroy_list(FilteredEntryList list)
+{
+  for (size_t i = 0; i < list->allocated; i++)
+    free(list->entries[i]);
+  free(list);
+}
