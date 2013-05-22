@@ -21,13 +21,11 @@ static bool has_good_extension(char *f, char *ext[])
 FilteredEntryList filtered_entry_list(char *dir, char **ext)
 {
   DIR *dir_ptr;
-  FilteredEntryList list = NULL;  /* NULL so first call to realloc is a malloc */
+  FilteredEntryList list;
   struct dirent *entry_ptr;
   struct stat fs;
   char path[FILENAME_MAX];
-  size_t allocated;  /* local count, since the struct member
-                      * won't exist yet on first call to realloc
-                      */
+
   if (!dir) {
     print_error(__FILE__, __LINE__, "dir parameter is NULL");
     return NULL;
@@ -48,7 +46,11 @@ FilteredEntryList filtered_entry_list(char *dir, char **ext)
     strcat(path, "/");
     pathlen++;
   }
-  allocated = 0;
+  if (!(list = malloc(sizeof(struct filtered_entry_list_type))))
+    print_error(__FILE__, __LINE__, "initial malloc() of entries list");
+
+  list->allocated = 0;
+
   while  ((entry_ptr = readdir(dir_ptr))) {
     /* ignore self and parent */
     if (strcmp(entry_ptr->d_name, ".") == 0 || strcmp(entry_ptr->d_name, "..") == 0)
@@ -72,27 +74,26 @@ FilteredEntryList filtered_entry_list(char *dir, char **ext)
       /* grow the entries list to hold another item pointer */
       if (!(list = realloc(list,
                            sizeof(struct filtered_entry_list_type) +
-                           ((allocated + 1) * sizeof(ListItem *)))))
+                           ((list->allocated + 1) * sizeof(ListItem *)))))
         print_error(__FILE__, __LINE__, "realloc() on entries list");
 
       /* store a new list item in the new slot in the entries list */
-      if (!(list->entries[allocated] = malloc(sizeof(ListItem) +
+      if (!(list->entries[list->allocated] = malloc(sizeof(ListItem) +
                                        (sizeof(char) * (strlen(path) + 1)))))
         print_error(__FILE__, __LINE__, "malloc() on ListItem");
 
       /* populate the new item */
-      strcpy(list->entries[allocated]->file_name, path);
-      list->entries[allocated]->is_dir = false;
+      strcpy(list->entries[list->allocated]->file_name, path);
+      list->entries[list->allocated]->is_dir = false;
       if (S_ISDIR(fs.st_mode))
-        list->entries[allocated]->is_dir = true;
+        list->entries[list->allocated]->is_dir = true;
 
       /* count the allocation */
-      allocated++;
+      list->allocated++;
     }
   }
 
   /* set count fields now that the struct is created */
-  list->allocated = allocated;
   list->available = list->allocated;
 
   /* Close the Directory */
