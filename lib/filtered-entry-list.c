@@ -119,3 +119,33 @@ void destroy_list(FilteredEntryList list)
     free(list->entries[i]);
   free(list);
 }
+static ListItem *remove_item(FilteredEntryList list, size_t i)
+{
+  ListItem *temp;
+
+  /* out of range or empty list */
+  if (i >= list->available)
+    return NULL;
+
+  /* last item, no swap needed */
+  if (i == list->available - 1) {
+    list->available--;
+    return list->entries[i];
+  }
+
+  /* "remove" by swapping pointers: target pointer is copied, */
+  /* then moved to the end */
+  temp = list->entries[i];
+  list->entries[i] = list->entries[list->available - 1];
+  list->entries[list->available - 1] = temp;
+  list->available--;
+
+  return temp;
+}
+ListItem *random_item(FilteredEntryList list)
+{
+  /* Depends on srand() being called by the client */
+  if (list->available)
+    return remove_item(list, rand() % list->available);
+  return NULL;
+}
