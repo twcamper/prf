@@ -59,14 +59,18 @@ FilteredEntryList glob_to_filtered_entry_list(glob_t *glob_result)
   list->available = list->allocated;
   return list;
 }
-static bool has_good_extension(char *f, char *ext[])
+static bool has_good_extension(char *f, char *ext[], size_t extension_count)
 {
-  char *dot_ptr;
+  char *p;
+  for (size_t i = 0; i < extension_count; i++)
+    if ((p = strrchr(f, '.')))
+      if (strcmp(++p, ext[i]) == 0)
+        return true;
 
-  return true;
+  return false;
 }
 
-FilteredEntryList filtered_entry_list(char *dir, char **ext)
+FilteredEntryList filtered_entry_list(char *dir, char **ext, size_t extension_count)
 {
   DIR *dir_ptr;
   FilteredEntryList list;
@@ -117,7 +121,7 @@ FilteredEntryList filtered_entry_list(char *dir, char **ext)
 
     /* filter the file */
     if ( S_ISDIR(fs.st_mode) ||
-        (S_ISREG(fs.st_mode) && has_good_extension(path, ext))) {
+        (S_ISREG(fs.st_mode) && has_good_extension(path, ext, extension_count))) {
 
       /* grow the entries list to hold another item pointer */
       if (!(list = realloc(list,

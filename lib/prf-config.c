@@ -3,7 +3,7 @@
 PrfConfig read_configuration(int argc, char *argv[])
 {
   int rc;
-  char *dir_glob =  "~/Music/{baroque,rock,jazz,soul}";
+  char *dir_glob =  "~/Music/{baroque,rock,rock,rock,jazz,jazz,jazz,soul}";
   PrfConfig prf_config;
   glob_t result;
 

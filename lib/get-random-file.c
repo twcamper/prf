@@ -1,15 +1,5 @@
 #include "get-random-file.h"
 
-static bool can_play(char *ext[], size_t n, char *filename)
-{
-  char *p;
-  for (size_t i = 0; i < n; i++)
-    if ((p = strrchr(filename, '.')))
-      if (strcmp(++p, ext[i]) == 0)
-        return true;
-
-  return false;
-}
 static char *find_file(FilteredEntryList entries, char **ext, size_t extension_count)
 {
   ListItem *entry;
@@ -17,7 +7,7 @@ static char *find_file(FilteredEntryList entries, char **ext, size_t extension_c
 
     /* get new set of entries if it's another directory */
     if (entry->is_dir) {
-      if (!(entries = filtered_entry_list(entry->file_name, ext))) {
+      if (!(entries = filtered_entry_list(entry->file_name, ext, extension_count))) {
         fprintf(stderr, "%s:%d %s '%s'\n", __FILE__, __LINE__, "Can't make entry list",  entry->file_name);
         exit(EXIT_FAILURE);
       }
