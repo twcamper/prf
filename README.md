@@ -1,5 +1,9 @@
 # prf
 
+<a href="http://en.wikipedia.org/wiki/For_No_Reason_at_All_in_C">
+  <img src="./data/Parlophfornoreason.jpg" height="260" width="266" alt="For Nor Reason At All In C" title="Well, C is kind of fun, actually."/>
+</a>
+
 ## Play Random File
 
 This is a C project to give me some practice with the file system interface.
@@ -8,10 +12,4 @@ This is a C project to give me some practice with the file system interface.
 2. Play the file in an associated player.
 3. Kill the player when the file is done.
 
-The search path, list of file extensions, and player associations are all
-configurable from the command line or a file.  The config file can be
-specified on the command line or in the shell environment.
-
-<a href="http://en.wikipedia.org/wiki/For_No_Reason_at_All_in_C">
-  <img src="./data/Parlophfornoreason.jpg" height="260" width="266" alt="For Nor Reason At All In C" title="Well, C is kind of fun, actually."/>
-</a>
+The search path, list of file extensions, and player associations are all configurable from the command line or a file at standard location $HOME/.prfrc
