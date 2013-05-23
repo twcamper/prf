@@ -18,7 +18,7 @@ typedef struct list_item {
 typedef struct filtered_entry_list_type *FilteredEntryList;
 
 FilteredEntryList filtered_entry_list(char *, char **, size_t);
-FilteredEntryList glob_to_filtered_entry_list(glob_t *);
+FilteredEntryList vector_to_filtered_entry_list(char **, size_t);
 ListItem *random_item(FilteredEntryList);
 void destroy_list(FilteredEntryList);
 void print_list(FilteredEntryList);

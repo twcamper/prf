@@ -18,9 +18,11 @@ PrfConfig read_configuration(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  prf_config.entries = glob_to_filtered_entry_list(&result);
-  prf_config.extension_count = 1;
+  prf_config.entries = vector_to_filtered_entry_list(result.gl_pathv, result.gl_pathc);
+  prf_config.extension_count = 3;
   prf_config.ext[0] = "flac";
+  prf_config.ext[1] = "mp3";
+  prf_config.ext[2] = "wv";
 
   return prf_config;
 }
