@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <errno.h>
+#include <glob.h>
 
 typedef struct list_item {
   bool is_dir;
@@ -17,7 +18,9 @@ typedef struct list_item {
 typedef struct filtered_entry_list_type *FilteredEntryList;
 
 FilteredEntryList filtered_entry_list(char *, char **);
+FilteredEntryList glob_to_filtered_entry_list(glob_t *);
 ListItem *random_item(FilteredEntryList);
 void destroy_list(FilteredEntryList);
 void print_list(FilteredEntryList);
+
 #endif

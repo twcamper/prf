@@ -11,6 +11,54 @@ static void print_error(char *f, long l, char *msg)
   fprintf(stderr, "%s:%ld \t", f, l);
   perror(msg);
 }
+FilteredEntryList glob_to_filtered_entry_list(glob_t *glob_result)
+{
+  if (!glob_result) {
+    print_error(__FILE__, __LINE__, "NULL glob result");
+    exit(EXIT_FAILURE);
+  }
+
+  struct stat fs;
+  FilteredEntryList list;
+  if (!(list = malloc(sizeof(struct filtered_entry_list_type) +
+                      ((glob_result->gl_pathc) * sizeof(ListItem *))))) {
+    print_error(__FILE__, __LINE__, "malloc() of entries list");
+    exit(EXIT_FAILURE);
+  }
+  list->allocated = 0;
+  for (size_t i = 0; i < glob_result->gl_pathc; i++) {
+    /* stat the file */
+    errno = 0;
+    if (stat(glob_result->gl_pathv[i], &fs)) {
+      print_error(__FILE__, __LINE__, glob_result->gl_pathv[i]);
+      exit(EXIT_FAILURE);
+    }
+    /* skip but report if it's a funny type */
+    if (!(S_ISDIR(fs.st_mode) || S_ISREG(fs.st_mode))) {
+      fprintf(stderr, "%s:%d %s is neither a directory or regular file\n", 
+          __FILE__, __LINE__, glob_result->gl_pathv[i]);
+      continue;
+    }
+    /* store a new list item in the new slot in the entries list */
+    if (!(list->entries[list->allocated] = malloc(sizeof(ListItem) +
+            (sizeof(char) * (strlen(glob_result->gl_pathv[i]) + 1))))) {
+      print_error(__FILE__, __LINE__, "malloc() on ListItem");
+      exit(EXIT_FAILURE);
+    }
+
+    /* populate the new item */
+    strcpy(list->entries[list->allocated]->file_name, glob_result->gl_pathv[i]);
+    list->entries[list->allocated]->is_dir = false;
+    if (S_ISDIR(fs.st_mode))
+      list->entries[list->allocated]->is_dir = true;
+
+    /* count the allocation */
+    list->allocated++;
+
+  }
+  list->available = list->allocated;
+  return list;
+}
 static bool has_good_extension(char *f, char *ext[])
 {
   char *dot_ptr;
