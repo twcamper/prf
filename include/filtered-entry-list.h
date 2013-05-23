@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <errno.h>
-#include <glob.h>
 
 typedef struct list_item {
   bool is_dir;

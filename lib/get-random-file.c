@@ -23,6 +23,11 @@ static char *find_file(FilteredEntryList entries, char **ext, size_t extension_c
 
 char *get_random_file(PrfConfig config)
 {
+  if (!config.entries) {
+    fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, "NULL initial directory list");
+    exit(EXIT_FAILURE);
+  }
+
   srand((unsigned int) time(NULL));
   return find_file(config.entries, config.ext, config.extension_count);
 }
