@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-  PrfConfig config = read_configuration(argc, argv);
+  PrfConfig config = read_configuration(&argc, &argv);
   puts(get_random_file(config));
   return 0;
 }
