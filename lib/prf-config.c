@@ -4,6 +4,11 @@
  * private macro definitions
  */
 #define LINE_MAX 1024
+#define EXT "ext"
+#define PATH "path"
+#define PATTERN "pattern"
+#define ASSOCIATION "association"
+#define ITEM_DELIMITERS ":,;"
 
 /*
  * private function declarations
@@ -34,11 +39,11 @@ static size_t add_associations(PrfConfig *config, char *s)
     s[len] = '\0';
 
   /* absolute path to a player */
-  if (!(player = strtok(s, ":,;")))
+  if (!(player = strtok(s, ITEM_DELIMITERS)))
     return -1;
 
   /* could be multiple associations to one player */
-  while ((ext = strtok(NULL, ":,;"))) {
+  while ((ext = strtok(NULL, ITEM_DELIMITERS))) {
     config->associations[config->association_count][0] = strdup(ext);
     config->associations[config->association_count][1] = strdup(player);
     config->association_count++;
@@ -67,14 +72,14 @@ static int append_delimited_list(glob_t *g, char *s)
   if (strlen(s) == 0)
     return -1;
 
-  p = strtok(s, ":,;");
+  p = strtok(s, ITEM_DELIMITERS);
   while (p) {
     errno = 0;
     rc = glob(p, GLOB_APPEND|GLOB_BRACE|GLOB_TILDE|GLOB_ERR, NULL, g);
     if (rc != 0 || g->gl_pathc == 0) {
       exit_error(__FILE__, __LINE__,  s);
     }
-    p = strtok(NULL, ":,;");
+    p = strtok(NULL, ITEM_DELIMITERS);
   }
   return rc;
 }
@@ -85,8 +90,8 @@ static size_t parse_delimited_list(char *s, char **ext)
   if (strlen(s) == 0)
     return tokens;
 
-  ext[tokens++] = strdup(strtok(s, ":,;"));
-  while ((p = strtok(NULL, ":,;"))) {
+  ext[tokens++] = strdup(strtok(s, ITEM_DELIMITERS));
+  while ((p = strtok(NULL, ITEM_DELIMITERS))) {
     ext[tokens++] = strdup(p);
   }
   return tokens;
@@ -136,8 +141,8 @@ static int read_config_file(PrfConfig *config)
       continue;
 
     if (config->extension_count == 0) {
-      if (strncmp("ext", l, 3) == 0) {
-        l = value_for_key(l, "ext");
+      if (strncmp(EXT, l, 3) == 0) {
+        l = value_for_key(l, EXT);
         if (*l == '\n') {
           read_error = true;
           break;
@@ -148,8 +153,8 @@ static int read_config_file(PrfConfig *config)
     }
 
     if (config->entries == NULL) {
-      if (strncmp("path", l, 4) == 0) {
-        l = value_for_key(l, "path");
+      if (strncmp(PATH, l, 4) == 0) {
+        l = value_for_key(l, PATH);
         if (*l == '\n') {
           read_error = true;
           break;
@@ -162,8 +167,8 @@ static int read_config_file(PrfConfig *config)
         continue;
       }
 
-      if (strncmp("pattern", l, 7) == 0) {
-        l = value_for_key(l, "pattern");
+      if (strncmp(PATTERN, l, 7) == 0) {
+        l = value_for_key(l, PATTERN);
         if (*l == '\n') {
           read_error = true;
           break;
@@ -181,8 +186,8 @@ static int read_config_file(PrfConfig *config)
       }
     }
 
-    if (strncmp("association", l, 6) == 0) {
-        l = value_for_key(l, "association");
+    if (strncmp(ASSOCIATION, l, 6) == 0) {
+        l = value_for_key(l, ASSOCIATION);
         if (*l == '\n') {
           read_error = true;
           break;
@@ -263,7 +268,6 @@ void destroy_configuration(PrfConfig *config)
   for (size_t i = 0; i < config->extension_count; i++)
     free(config->ext[i]);
   for (size_t i = 0; i < config->association_count; i++) {
-    printf("%ld) %s: %s\n", i, config->associations[i][0], config->associations[i][1]);
     free(config->associations[i][0]);
     free(config->associations[i][1]);
   }
