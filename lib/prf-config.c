@@ -1,5 +1,38 @@
 #include "prf-config.h"
 
+#define LINE_MAX 1024
+static void exit_error(char *f, int l, char *msg)
+{
+  fprintf(stderr, "%s:%d\t", f, l);
+  perror(msg);
+  exit(EXIT_FAILURE);
+}
+static char * value_for_key(char *s, char *key)
+{
+  size_t len = strlen(key);
+  /* advance pointer past end of key-word */
+  s += len + 1;
+  /* first char not in that string: should begin our value */
+  return (s += strspn(s, " \t="));
+}
+static int append_delimited_list(glob_t *g, char *s)
+{
+  int rc = 0;
+  char *p;
+  if (strlen(s) == 0)
+    return -1;
+
+  p = strtok(s, ":,;");
+  while (p) {
+    errno = 0;
+    rc = glob(p, GLOB_APPEND|GLOB_BRACE|GLOB_TILDE|GLOB_ERR, NULL, g);
+    if (rc != 0 || g->gl_pathc == 0) {
+      exit_error(__FILE__, __LINE__,  s);
+    }
+    p = strtok(NULL, ":,;");
+  }
+  return rc;
+}
 static size_t parse_delimited_list(char *s, char **ext)
 {
   size_t tokens = 0;
@@ -7,60 +40,162 @@ static size_t parse_delimited_list(char *s, char **ext)
   if (strlen(s) == 0)
     return tokens;
 
-  ext[tokens++] = strtok(s, ":,;");
+  ext[tokens++] = strdup(strtok(s, ":,;"));
   while ((p = strtok(NULL, ":,;"))) {
-    ext[tokens++] = p;
+    ext[tokens++] = strdup(p);
   }
   return tokens;
+}
+static void set_config_filename(char *buffer)
+{
+  if (CONFIG_FILE_PATH[0] == '~') {
+    strncpy(buffer, getenv("HOME"), FILENAME_MAX + 1);
+    strncat(buffer, CONFIG_FILE_PATH + 1, FILENAME_MAX + 1);
+  } else
+    strncpy(buffer, CONFIG_FILE_PATH, FILENAME_MAX + 1);
+}
+static int read_config_file(PrfConfig *config)
+{
+  char line[LINE_MAX + 1];
+  char filename[FILENAME_MAX + 1];
+  bool read_error = false;
+  struct stat fs;
+  int rc;
+  glob_t result;
+
+  memset(&result, 0, sizeof(result));
+  memset(&fs, 0, sizeof(fs));
+
+  set_config_filename(filename);
+
+  if (stat(filename, &fs)) {
+    return errno;
+  }
+
+  if (fs.st_size == 0) {
+    return EMPTY_CONFIG_FILE;
+  }
+
+  FILE *fp;
+  if ((fp = fopen(filename, "r")) == NULL) {
+    exit_error(__FILE__, __LINE__, filename);
+  }
+
+  char *l;
+  while ((l = fgets(line, sizeof(line), fp)) != NULL) {
+    while (*l && *l != '\n' && isspace(*l)) l++;  /* ignore leading whitespace */
+
+    /* skip commented or blank line */
+    if (*l == '#' || *l == '\n')
+      continue;
+
+    if (config->extension_count == 0) {
+      if (strncmp("ext", l, 3) == 0) {
+        l = value_for_key(l, "ext");
+        if (*l == '\n') {
+          read_error = true;
+          break;
+        }
+        config->extension_count = parse_delimited_list(l, config->ext);
+        continue;
+      }
+    }
+
+    if (config->entries == NULL) {
+      if (strncmp("path", l, 4) == 0) {
+        l = value_for_key(l, "path");
+        if (*l == '\n') {
+          read_error = true;
+          break;
+        }
+        /* chomp newline for the sake of glob */
+        l[strlen(l) - 1] = '\0';
+        /* break up paths, feed to vector_to_filtered_entry_list */
+        if (append_delimited_list(&result, l) != 0)
+          exit_error(__FILE__, __LINE__, "empty 'path' value string");
+      }
+      if (strncmp("pattern", l, 7) == 0) {
+        l = value_for_key(l, "pattern");
+        if (*l == '\n') {
+          read_error = true;
+          break;
+        }
+        /* chomp newline for the sake of glob */
+        l[strlen(l) - 1] = '\0';
+
+        errno = 0;
+        rc = glob(l, GLOB_APPEND|GLOB_BRACE|GLOB_TILDE|GLOB_ERR, NULL, &result);
+        if (rc != 0 || result.gl_pathc == 0) {
+          /* not getting GLOB_NOMATCH, so resort to testing count of paths found */
+          exit_error(__FILE__, __LINE__,  l);
+        }
+      }
+    }
+
+  }
+  if (ferror(fp)) {
+    read_error = true;
+    perror(filename);
+  }
+  if (fclose(fp) == EOF || read_error) {
+    exit_error(__FILE__, __LINE__, filename);
+  }
+  if (result.gl_pathc) {
+    config->entries = vector_to_filtered_entry_list(result.gl_pathv, result.gl_pathc);
+    globfree(&result);
+  }
+
+  return 0;
 }
 /* argc and argv should be pointers so main will have know about any changes */
 PrfConfig read_configuration(int *argc, char **argv[])
 {
   int opt_ch, rc;
-  char *dir_glob =  NULL;
-  /* char *dir_glob =  "~/Music/{baroque,moderne,rock,rock,rock,jazz,jazz,jazz,soul}"; */
-  PrfConfig prf_config;
-  memset(&prf_config, 0, sizeof(PrfConfig));
-  glob_t result;
+  PrfConfig config;
+  memset(&config, 0, sizeof(PrfConfig));
 
-  if (*argc > 0) {
+  if (*argc > 1) {
     while ((opt_ch = getopt(*argc, *argv, "e:")) != EOF) {
       switch(opt_ch) {
         case 'e':
-          prf_config.extension_count = parse_delimited_list(optarg, prf_config.ext);
+          config.extension_count = parse_delimited_list(optarg, config.ext);
           break;
         default:
           fprintf(stderr, "Unknown option: '%c'\n", opt_ch);
           exit(EXIT_FAILURE);
-
       }
     }
+    /* point past program name in args to vector_to_filtered_entry_list */
+    size_t arg_offset = 1;
 
+    /* argv will point to first arg AFTER program name!! */
     if (optind > 1) {
       *argc -= optind;
       *argv += optind;
+      arg_offset = 0;  /* program name is no more!! */
     }
-    prf_config.entries = vector_to_filtered_entry_list(*argv + 1, *argc - 1);
+    /* make an entry list if we have non-option args */
+    if (*argc > 0)
+      config.entries = vector_to_filtered_entry_list(*argv + arg_offset, *argc - arg_offset);
   }
 
-  if (dir_glob) {
-    errno = 0;
-    rc = glob(dir_glob, GLOB_BRACE|GLOB_TILDE|GLOB_ERR, NULL, &result);
-    if (rc != 0 || (&result && result.gl_pathc == 0)) {
-      /* not getting GLOB_NOMATCH, so resort to testing count of paths found */
-      fprintf(stderr, "%s:%d glob: %s '%s'\n", __FILE__, __LINE__, strerror(errno), dir_glob);
-      exit(EXIT_FAILURE);
-    }
+  rc = read_config_file(&config);
+  if (config.extension_count == 0 || (!config.entries)) {
+    if (rc == EMPTY_CONFIG_FILE)
+      fprintf(stderr, "empty config file: %s\n", CONFIG_FILE_PATH);
+    else if (rc != 0)
+      fprintf(stderr, "%s: %s\n", strerror(rc),  CONFIG_FILE_PATH);
 
-    prf_config.entries = vector_to_filtered_entry_list(result.gl_pathv, result.gl_pathc);
+    destroy_configuration(&config);
+    exit(EXIT_FAILURE);
   }
 
-  if (!prf_config.extension_count) {
-    prf_config.extension_count = 3;
-    prf_config.ext[0] = "flac";
-    prf_config.ext[1] = "mp3";
-    prf_config.ext[2] = "wv";
-  }
-
-  return prf_config;
+  return config;
+}
+void destroy_configuration(PrfConfig *config)
+{
+  for (size_t i = 0; i < config->extension_count; i++)
+    free(config->ext[i]);
+  if (config->entries)
+    destroy_list(config->entries);
 }

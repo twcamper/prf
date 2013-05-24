@@ -2,3 +2,4 @@
 *.swp
 NERD*
 bin/prf
+tag.c
