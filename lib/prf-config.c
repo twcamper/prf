@@ -1,6 +1,23 @@
 #include "prf-config.h"
 
+/*
+ * private macro definitions
+ */
 #define LINE_MAX 1024
+
+/*
+ * private function declarations
+ */
+static void exit_error(char *, int , char *);
+static int append_delimited_list(glob_t *, char *);
+static size_t parse_delimited_list(char *, char **);
+static void set_config_filename(char *);
+static int read_config_file(PrfConfig *);
+static char * value_for_key(char *, char *);
+
+/*
+ * private function definitions
+ */
 static void exit_error(char *f, int l, char *msg)
 {
   fprintf(stderr, "%s:%d\t", f, l);
@@ -147,6 +164,11 @@ static int read_config_file(PrfConfig *config)
 
   return 0;
 }
+
+/*
+ * Public Functions
+ */
+
 /* argc and argv should be pointers so main will have know about any changes */
 PrfConfig read_configuration(int *argc, char **argv[])
 {
