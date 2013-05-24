@@ -8,16 +8,44 @@
 /*
  * private function declarations
  */
-static void exit_error(char *, int , char *);
+static size_t add_associations(PrfConfig *, char *);
 static int append_delimited_list(glob_t *, char *);
+static void exit_error(char *, int , char *);
 static size_t parse_delimited_list(char *, char **);
-static void set_config_filename(char *);
 static int read_config_file(PrfConfig *);
-static char * value_for_key(char *, char *);
+static void set_config_filename(char *);
+static char *value_for_key(char *, char *);
 
 /*
  * private function definitions
  */
+static size_t add_associations(PrfConfig *config, char *s)
+{
+  size_t len, new_assocations = 0;
+  char *ext, *player;
+  if ((len = strlen(s)) == 0)
+    return -1;
+
+  /* Clean up trailing whitespace:
+   * we'll be using the final value as a
+   * search key later
+   * */
+  while (isspace(s[--len]))
+    s[len] = '\0';
+
+  /* absolute path to a player */
+  if (!(player = strtok(s, ":,;")))
+    return -1;
+
+  /* could be multiple associations to one player */
+  while ((ext = strtok(NULL, ":,;"))) {
+    config->associations[config->association_count][0] = strdup(ext);
+    config->associations[config->association_count][1] = strdup(player);
+    config->association_count++;
+    new_assocations++;
+  }
+  return new_assocations;
+}
 static void exit_error(char *f, int l, char *msg)
 {
   fprintf(stderr, "%s:%d\t", f, l);
@@ -65,9 +93,10 @@ static size_t parse_delimited_list(char *s, char **ext)
 }
 static void set_config_filename(char *buffer)
 {
-  if (CONFIG_FILE_PATH[0] == '~') {
+  char *tilde = strchr(CONFIG_FILE_PATH, '~');
+  if (tilde) {
     strncpy(buffer, getenv("HOME"), FILENAME_MAX + 1);
-    strncat(buffer, CONFIG_FILE_PATH + 1, FILENAME_MAX + 1);
+    strncat(buffer, tilde + 1, FILENAME_MAX + 1);
   } else
     strncpy(buffer, CONFIG_FILE_PATH, FILENAME_MAX + 1);
 }
@@ -130,7 +159,9 @@ static int read_config_file(PrfConfig *config)
         /* break up paths, feed to vector_to_filtered_entry_list */
         if (append_delimited_list(&result, l) != 0)
           exit_error(__FILE__, __LINE__, "empty 'path' value string");
+        continue;
       }
+
       if (strncmp("pattern", l, 7) == 0) {
         l = value_for_key(l, "pattern");
         if (*l == '\n') {
@@ -146,9 +177,22 @@ static int read_config_file(PrfConfig *config)
           /* not getting GLOB_NOMATCH, so resort to testing count of paths found */
           exit_error(__FILE__, __LINE__,  l);
         }
+        continue;
       }
     }
 
+    if (strncmp("association", l, 6) == 0) {
+        l = value_for_key(l, "association");
+        if (*l == '\n') {
+          read_error = true;
+          break;
+        }
+        if (add_associations(config, l) < 1) {
+          fprintf(stderr, "%s:%d bad association line\n", __FILE__, __LINE__);
+          read_error = true;
+          break;
+        }
+    }
   }
   if (ferror(fp)) {
     read_error = true;
@@ -218,6 +262,11 @@ void destroy_configuration(PrfConfig *config)
 {
   for (size_t i = 0; i < config->extension_count; i++)
     free(config->ext[i]);
+  for (size_t i = 0; i < config->association_count; i++) {
+    printf("%ld) %s: %s\n", i, config->associations[i][0], config->associations[i][1]);
+    free(config->associations[i][0]);
+    free(config->associations[i][1]);
+  }
   if (config->entries)
     destroy_list(config->entries);
 }

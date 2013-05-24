@@ -14,9 +14,12 @@
 #define MAX_EXTENSIONS 256
 #define EMPTY_CONFIG_FILE -13
 #define CONFIG_FILE_PATH "~/.prfrc"
+
 typedef struct prf_config {
   size_t extension_count;
   char *ext[MAX_EXTENSIONS];
+  size_t association_count;
+  char *associations[MAX_EXTENSIONS][2];
   FilteredEntryList  entries;
 } PrfConfig;
 
