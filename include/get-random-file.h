@@ -2,6 +2,7 @@
 #define GET_RANDOM_FILE_H
 
 #include "prf-config.h"
+#include "prf-stack.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

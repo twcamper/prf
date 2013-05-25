@@ -4,15 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <glob.h>
+#include "filtered-entry-list.h"
 
-struct visited_dir {
-  glob_t *entries;
-  size_t tried_count;
-  size_t **tried;
-};
-
-typedef struct visited_dir Item;
+typedef FilteredEntryList Item;
 
 typedef struct prf_stack_type *PrfStack;
 

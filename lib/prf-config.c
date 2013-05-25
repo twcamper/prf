@@ -85,10 +85,16 @@ static int append_delimited_list(glob_t *g, char *s)
 }
 static size_t parse_delimited_list(char *s, char **ext)
 {
-  size_t tokens = 0;
+  size_t len, tokens = 0;
   char *p;
-  if (strlen(s) == 0)
+  if ((len = strlen(s)) == 0)
     return tokens;
+
+  /* Clean up trailing whitespace:
+   * we'll be using the final value later
+   * */
+  while (isspace(s[--len]))
+    s[len] = '\0';
 
   ext[tokens++] = strdup(strtok(s, ITEM_DELIMITERS));
   while ((p = strtok(NULL, ITEM_DELIMITERS))) {
@@ -271,6 +277,4 @@ void destroy_configuration(PrfConfig *config)
     free(config->associations[i][0]);
     free(config->associations[i][1]);
   }
-  if (config->entries)
-    destroy_list(config->entries);
 }

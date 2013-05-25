@@ -9,10 +9,18 @@ CFLAGS  = -g  -Wall -Wextra -pedantic -std=c99 -I$(INCS)
 
 all: bin/prf
 
-bin/prf : % : src/prf.o $(LIBS)/get-random-file.o $(LIBS)/prf-config.o $(LIBS)/filtered-entry-list.o
+bin/prf : % : src/prf.o \
+	            $(LIBS)/get-random-file.o \
+							$(LIBS)/prf-config.o \
+							$(LIBS)/filtered-entry-list.o \
+							$(LIBS)/prf-stack.o
 	$(LD) $^ -o $@
 
-src/prf.o: %.o : %.c $(INCS)/get-random-file.h $(INCS)/prf-config.h $(INCS)/filtered-entry-list.h
+src/prf.o: %.o : %.c \
+	               $(INCS)/get-random-file.h \
+								 $(INCS)/prf-config.h \
+								 $(INCS)/filtered-entry-list.h \
+								 $(INCS)/prf-stack.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONY : clean clean-obj clean-bin

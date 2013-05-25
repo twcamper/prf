@@ -10,6 +10,7 @@ struct prf_stack_type {
 };
 
 static void delete_head(PrfStack);
+static void destroy_value(Item);
 static void terminate(char *);
 
 PrfStack create_stack(void)
@@ -25,6 +26,10 @@ void destroy_stack(PrfStack s)
 {
   clear_stack(s);
   free(s);
+}
+static void destroy_value(Item i)
+{
+  destroy_list(i);
 }
 bool is_empty(PrfStack s)
 {
@@ -50,15 +55,18 @@ Item pop(PrfStack s)
     terminate("Stack Underflow\n");
   }
 
-  Item temp_value = s->top->value;
+  static Item temp_value;
+  temp_value = s->top->value;
   delete_head(s);
   return temp_value;
 }
 
 void clear_stack(PrfStack s)
 {
-  while (s->top)
+  while (s->top) {
+    destroy_value(s->top->value);
     delete_head(s);
+  }
 }
 
 static void delete_head(PrfStack s)

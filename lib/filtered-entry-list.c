@@ -19,7 +19,7 @@ FilteredEntryList vector_to_filtered_entry_list(char **paths, size_t count)
   }
 
   struct stat fs;
-  FilteredEntryList list;
+  static FilteredEntryList list;
   if (!(list = malloc(sizeof(struct filtered_entry_list_type) +
                       (count * sizeof(ListItem *))))) {
     print_error(__FILE__, __LINE__, "malloc() of entries list");
@@ -61,11 +61,14 @@ FilteredEntryList vector_to_filtered_entry_list(char **paths, size_t count)
 }
 static bool has_good_extension(char *f, char *ext[], size_t extension_count)
 {
-  char *p;
-  for (size_t i = 0; i < extension_count; i++)
-    if ((p = strrchr(f, '.')))
-      if (strcmp(++p, ext[i]) == 0)
+  char *p = strrchr(f, '.');
+  if (p) {
+    p++;  /* char after dot */
+    for (size_t i = 0; i < extension_count; i++) {
+      if (strcmp(p, ext[i]) == 0)
         return true;
+    }
+  }
 
   return false;
 }
@@ -73,7 +76,7 @@ static bool has_good_extension(char *f, char *ext[], size_t extension_count)
 FilteredEntryList filtered_entry_list(char *dir, char **ext, size_t extension_count)
 {
   DIR *dir_ptr;
-  FilteredEntryList list;
+  static FilteredEntryList list;
   struct dirent *entry_ptr;
   struct stat fs;
   char path[FILENAME_MAX];
@@ -93,7 +96,7 @@ FilteredEntryList filtered_entry_list(char *dir, char **ext, size_t extension_co
    * which will begin each entry below
    */
   strcpy(path, dir);
-  int pathlen = strlen(path);
+  size_t pathlen = strlen(path);
   if (path[pathlen - 1] != '/') {
     strcat(path, "/");
     pathlen++;
@@ -160,9 +163,9 @@ FilteredEntryList filtered_entry_list(char *dir, char **ext, size_t extension_co
 void print_list(FilteredEntryList list)
 {
   size_t i;
-  printf("Size: %ld\n", list->allocated);
-  for (i = 0; i < list->allocated; i++)
-    printf("%d: %s\n", list->entries[i]->is_dir, list->entries[i]->file_name);
+  printf("Size: %ld\n", list->available);
+  for (i = 0; i < list->available; i++)
+    printf("%p] %d: %s\n", &list->entries[i], list->entries[i]->is_dir, list->entries[i]->file_name);
 }
 
 void destroy_list(FilteredEntryList list)
@@ -173,7 +176,7 @@ void destroy_list(FilteredEntryList list)
 }
 static ListItem *remove_item(FilteredEntryList list, size_t i)
 {
-  ListItem *temp;
+  static ListItem *temp;
 
   /* out of range or empty list */
   if (i >= list->available)
