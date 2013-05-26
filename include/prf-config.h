@@ -20,6 +20,7 @@ typedef struct prf_config {
   char *ext[MAX_EXTENSIONS];
   size_t association_count;
   char *associations[MAX_EXTENSIONS][2];
+  char log_file[FILENAME_MAX + 1];
   FilteredEntryList  entries;
 } PrfConfig;
 

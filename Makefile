@@ -10,16 +10,18 @@ CFLAGS  = -g  -Wall -Wextra -pedantic -std=c99 -I$(INCS)
 all: bin/prf
 
 bin/prf : % : src/prf.o \
-	            $(LIBS)/get-random-file.o \
+	            $(LIBS)/random-file.o \
 							$(LIBS)/prf-config.o \
 							$(LIBS)/filtered-entry-list.o \
+							$(LIBS)/played.o \
 							$(LIBS)/prf-stack.o
 	$(LD) $^ -o $@
 
 src/prf.o: %.o : %.c \
-	               $(INCS)/get-random-file.h \
+	               $(INCS)/random-file.h \
 								 $(INCS)/prf-config.h \
 								 $(INCS)/filtered-entry-list.h \
+								 $(INCS)/played.h \
 								 $(INCS)/prf-stack.h
 	$(CC) -c $(CFLAGS) $< -o $@
 

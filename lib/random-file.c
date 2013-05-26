@@ -1,4 +1,4 @@
-#include "get-random-file.h"
+#include "random-file.h"
 
 static char *find_file(PrfStack s, FilteredEntryList restrict entries, char **ext, size_t extension_count)
 {
@@ -37,17 +37,17 @@ static char *find_file(PrfStack s, FilteredEntryList restrict entries, char **ex
   }
 }
 
-char *get_random_file(PrfConfig config)
+char *get_random_file(PrfConfig *config)
 {
   char *f;
   PrfStack stack = create_stack();
-  if (!config.entries) {
+  if (!config->entries) {
     fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, "NULL initial directory list");
     exit(EXIT_FAILURE);
   }
 
   srand((unsigned int) time(NULL));
-  f = find_file(stack, config.entries, config.ext, config.extension_count);
+  f = find_file(stack, config->entries, config->ext, config->extension_count);
   destroy_stack(stack);
   return f;
 }

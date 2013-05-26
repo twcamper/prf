@@ -1,5 +1,5 @@
-#ifndef GET_RANDOM_FILE_H
-#define GET_RANDOM_FILE_H
+#ifndef RANDOM_FILE_H
+#define RANDOM_FILE_H
 
 #include "prf-config.h"
 #include "prf-stack.h"
@@ -10,6 +10,6 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
-char *get_random_file(PrfConfig);
+char *get_random_file(PrfConfig *);
 
 #endif
