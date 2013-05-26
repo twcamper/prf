@@ -31,13 +31,6 @@ static size_t add_associations(PrfConfig *config, char *s)
   if ((len = strlen(s)) == 0)
     return -1;
 
-  /* Clean up trailing whitespace:
-   * we'll be using the final value as a
-   * search key later
-   * */
-  while (isspace(s[--len]))
-    s[len] = '\0';
-
   /* absolute path to a player */
   if (!(player = strtok(s, ITEM_DELIMITERS)))
     return -1;
@@ -62,6 +55,12 @@ static char * value_for_key(char *s, char *key)
   size_t len = strlen(key);
   /* advance pointer past end of key-word */
   s += len + 1;
+
+  /* clean up trailing whitespace */
+  len = strlen(s);
+  while (isspace(s[--len]))
+    s[len] = '\0';
+
   /* first char not in that string: should begin our value */
   return (s += strspn(s, " \t="));
 }
@@ -89,12 +88,6 @@ static size_t parse_delimited_list(char *s, char **ext)
   char *p;
   if ((len = strlen(s)) == 0)
     return tokens;
-
-  /* Clean up trailing whitespace:
-   * we'll be using the final value later
-   * */
-  while (isspace(s[--len]))
-    s[len] = '\0';
 
   ext[tokens++] = strdup(strtok(s, ITEM_DELIMITERS));
   while ((p = strtok(NULL, ITEM_DELIMITERS))) {
@@ -149,7 +142,7 @@ static int read_config_file(PrfConfig *config)
     if (config->extension_count == 0) {
       if (strncmp(EXT, l, 3) == 0) {
         l = value_for_key(l, EXT);
-        if (*l == '\n') {
+        if (*l == '\0') {
           read_error = true;
           break;
         }
@@ -161,12 +154,10 @@ static int read_config_file(PrfConfig *config)
     if (config->entries == NULL) {
       if (strncmp(PATH, l, 4) == 0) {
         l = value_for_key(l, PATH);
-        if (*l == '\n') {
+        if (*l == '\0') {
           read_error = true;
           break;
         }
-        /* chomp newline for the sake of glob */
-        l[strlen(l) - 1] = '\0';
         /* break up paths, feed to vector_to_filtered_entry_list */
         if (append_delimited_list(&result, l) != 0)
           exit_error(__FILE__, __LINE__, "empty 'path' value string");
@@ -175,12 +166,10 @@ static int read_config_file(PrfConfig *config)
 
       if (strncmp(PATTERN, l, 7) == 0) {
         l = value_for_key(l, PATTERN);
-        if (*l == '\n') {
+        if (*l == '\0') {
           read_error = true;
           break;
         }
-        /* chomp newline for the sake of glob */
-        l[strlen(l) - 1] = '\0';
 
         errno = 0;
         rc = glob(l, GLOB_APPEND|GLOB_BRACE|GLOB_TILDE|GLOB_ERR, NULL, &result);
@@ -194,7 +183,7 @@ static int read_config_file(PrfConfig *config)
 
     if (strncmp(ASSOCIATION, l, 6) == 0) {
         l = value_for_key(l, ASSOCIATION);
-        if (*l == '\n') {
+        if (*l == '\0') {
           read_error = true;
           break;
         }
