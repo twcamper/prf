@@ -133,7 +133,9 @@ static int read_config_file(PrfConfig *config)
 
   char *l;
   while ((l = fgets(line, sizeof(line), fp)) != NULL) {
-    while (*l && *l != '\n' && isspace(*l)) l++;  /* ignore leading whitespace */
+    /* ignore leading whitespace */
+    while (*l && *l != '\n' && isspace(*l))
+      l++;
 
     /* skip commented or blank line */
     if (*l == '#' || *l == '\n')
