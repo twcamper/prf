@@ -1,0 +1,4 @@
+Usage Note: Don't use FILENAME_MAX as the size of an array in which to store a file name! You can't possibly make an array that big! Use dynamic allocation (see Memory Allocation) instead.
+    - filtered entry list parent dir path
+    - prf-config log file name
+    - prf-config config file name

@@ -3,12 +3,13 @@
 /*
  * private macro definitions
  */
-#define LINE_MAX 1024
+#define ASSOCIATION "association"
 #define EXT "ext"
+#define ITEM_DELIMITERS ":,;"
+#define LINE_MAX 1024
+#define LOG_FILE "log"
 #define PATH "path"
 #define PATTERN "pattern"
-#define ASSOCIATION "association"
-#define ITEM_DELIMITERS ":,;"
 
 /*
  * private function declarations
@@ -149,6 +150,18 @@ static int read_config_file(PrfConfig *config)
           break;
         }
         config->extension_count = parse_delimited_list(l, config->ext);
+        continue;
+      }
+    }
+
+    if (strlen(config->log_file) == 0) {
+      if (strncmp(LOG_FILE, l, strlen(LOG_FILE)) == 0) {
+        l = value_for_key(l, LOG_FILE);
+        if (*l == '\0') {
+          read_error = true;
+          break;
+        }
+        strcpy(config->log_file, l);
         continue;
       }
     }
