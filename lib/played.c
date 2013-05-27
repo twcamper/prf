@@ -103,6 +103,7 @@ static FILE *get_output_stream(char *filename)
 static int make_dir_p(char *dir_path)
 {
   pid_t pid;
+  int pidstatus;
 
   errno = 0;
   if ((pid = fork()) == -1) {
@@ -116,6 +117,11 @@ static int make_dir_p(char *dir_path)
       perror("mkdir -p");
       return -1;
     }
+  }
+  errno = 0;
+  if (waitpid(pid, &pidstatus, 0) == -1) {
+    perror("waiting for mkdir -p");
+    return -1;
   }
   return 0;
 }
