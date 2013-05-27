@@ -1,6 +1,6 @@
 #include "random-file.h"
 
-static char *find_file(PrfStack s, FilteredEntryList restrict entries, char **ext, size_t extension_count)
+static char *find_file(PrfStack s, FilteredEntryList entries, char **ext, size_t extension_count)
 {
 
   static ListItem *entry;
