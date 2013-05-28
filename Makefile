@@ -25,9 +25,9 @@ src/prf.o: %.o : %.c \
 								 $(INCS)/prf-stack.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
-.PHONY : clean clean-obj clean-bin
+.PHONY : clean clean-obj clean-bin clean-data
 
-clean: clean-obj clean-bin
+clean: clean-obj clean-bin clean-data
 
 XARGS_RM = xargs rm -fv
 
@@ -36,5 +36,9 @@ clean-obj:
 
 clean-bin:
 	@find . -perm +111 -type f | grep -vE "\.(git|sh|rb)" | $(XARGS_RM)
+	@find . -type d -name '*.dSYM' | xargs rm -rfv
+
+clean-data:
+	@find ~/.prf/ -type f | $(XARGS_RM)
 
 include $(LIBS)/makefile

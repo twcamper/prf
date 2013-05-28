@@ -3,6 +3,7 @@
 
 #include "prf-config.h"
 #include "prf-stack.h"
+#include "played.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

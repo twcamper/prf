@@ -18,8 +18,8 @@ static size_t add_associations(PrfConfig *, char *);
 static int append_delimited_list(glob_t *, char *);
 static void exit_error(char *, int , char *);
 static size_t parse_delimited_list(char *, char **);
-static int read_config_file(PrfConfig *);
-static void set_config_filename(char *);
+static int read_config_file(char *, PrfConfig *);
+static int expand_home_dir(char *, char **);
 static char *value_for_key(char *, char *);
 
 /*
@@ -96,19 +96,33 @@ static size_t parse_delimited_list(char *s, char **ext)
   }
   return tokens;
 }
-static void set_config_filename(char *buffer)
+static int expand_home_dir(char *filename, char **buffer)
 {
-  char *tilde = strchr(CONFIG_FILE_PATH, '~');
+  size_t len;
+  char *tilde = strchr(filename, '~');
   if (tilde) {
-    strncpy(buffer, getenv("HOME"), FILENAME_MAX + 1);
-    strncat(buffer, tilde + 1, FILENAME_MAX + 1);
-  } else
-    strncpy(buffer, CONFIG_FILE_PATH, FILENAME_MAX + 1);
+    char *home = getenv("HOME");
+    len = strlen(tilde + 1);
+    size_t home_len = strlen(home);
+    /* make sure we'll have room */
+    if (home_len + strlen(filename) > FILENAME_MAX) {
+      errno = ENAMETOOLONG;
+      fprintf(stderr, "%s:%d expand_home_dir() %s: '%s' + '%s'\n", __FILE__, __LINE__, strerror(errno), home, tilde + 1);
+      return -1;
+    }
+    *buffer = malloc(home_len + len + 1);
+    strncpy(*buffer, home, home_len + 1);
+    strncat(*buffer, tilde + 1, len + 1);
+  } else {
+    len = strlen(filename);
+    *buffer = malloc(len + 1);
+    strncpy(*buffer, filename, len + 1);
+  }
+  return 0;
 }
-static int read_config_file(PrfConfig *config)
+static int read_config_file(char *filename, PrfConfig *config)
 {
   char line[LINE_MAX + 1];
-  char filename[FILENAME_MAX + 1];
   bool read_error = false;
   struct stat fs;
   int rc;
@@ -116,8 +130,6 @@ static int read_config_file(PrfConfig *config)
 
   memset(&result, 0, sizeof(result));
   memset(&fs, 0, sizeof(fs));
-
-  set_config_filename(filename);
 
   if (stat(filename, &fs)) {
     return errno;
@@ -154,14 +166,17 @@ static int read_config_file(PrfConfig *config)
       }
     }
 
-    if (strlen(config->log_file) == 0) {
+    if (!config->log_file) {
       if (strncmp(LOG_FILE, l, strlen(LOG_FILE)) == 0) {
         l = value_for_key(l, LOG_FILE);
         if (*l == '\0') {
           read_error = true;
           break;
         }
-        strcpy(config->log_file, l);
+        if (expand_home_dir(l, &config->log_file) == -1) {
+          read_error = true;
+          break;
+        }
         continue;
       }
     }
@@ -234,12 +249,17 @@ PrfConfig read_configuration(int *argc, char **argv[])
   int opt_ch, rc;
   PrfConfig config;
   memset(&config, 0, sizeof(PrfConfig));
+  char *config_file = "\0";
 
   if (*argc > 1) {
-    while ((opt_ch = getopt(*argc, *argv, "e:")) != EOF) {
+    while ((opt_ch = getopt(*argc, *argv, "e:f:")) != EOF) {
       switch(opt_ch) {
         case 'e':
           config.extension_count = parse_delimited_list(optarg, config.ext);
+          break;
+        case 'f':
+          if (expand_home_dir(optarg, &config_file) != 0)
+            exit(EXIT_FAILURE);
           break;
         default:
           fprintf(stderr, "Unknown option: '%c'\n", opt_ch);
@@ -260,17 +280,24 @@ PrfConfig read_configuration(int *argc, char **argv[])
       config.entries = vector_to_filtered_entry_list(*argv + arg_offset, *argc - arg_offset);
   }
 
-  rc = read_config_file(&config);
+  if (strlen(config_file) == 0) {
+    if (expand_home_dir(DEFAULT_CONFIG_FILE_PATH, &config_file) != 0)
+      exit(EXIT_FAILURE);
+  }
+
+  rc = read_config_file(config_file, &config);
   if (config.extension_count == 0 || (!config.entries)) {
     if (rc == EMPTY_CONFIG_FILE)
-      fprintf(stderr, "empty config file: %s\n", CONFIG_FILE_PATH);
+      fprintf(stderr, "empty config file: %s\n", config_file);
     else if (rc != 0)
-      fprintf(stderr, "%s: %s\n", strerror(rc),  CONFIG_FILE_PATH);
+      fprintf(stderr, "%s: %s\n", strerror(rc),  config_file);
 
+    free(config_file);
     destroy_configuration(&config);
     exit(EXIT_FAILURE);
   }
 
+  free(config_file);
   return config;
 }
 void destroy_configuration(PrfConfig *config)
@@ -281,4 +308,5 @@ void destroy_configuration(PrfConfig *config)
     free(config->associations[i][0]);
     free(config->associations[i][1]);
   }
+  free(config->log_file);
 }

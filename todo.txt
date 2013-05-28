@@ -1,13 +1,10 @@
 Usage Note: Don't use FILENAME_MAX as the size of an array in which to store a file name! You can't possibly make an array that big! Use dynamic allocation (see Memory Allocation) instead.
     - filtered entry list parent dir path
-    - prf-config log file name
-    - prf-config config file name
 
-
-How to insert into ordered log file:
-    line IO to find spot (last line smaller, first one bigger)
-          just need a buffer for a line that's always rewritten
-    block IO to read in remainder of file to memory
-    truncate file
-    append line
-    block IO to replace the shifted lines
+Log file will be a simple queue:
+    - configurable threshhold (e.g., 200 or 500 files)
+    - logging algorithm
+      1) append filename
+      2) read in file
+      3) count newlines
+      4) if threshhold exceeded, truncate file, write out everything from the second line on

@@ -10,4 +10,5 @@
 #include <unistd.h>
 
 int log_as_played(char *, char *);
+bool has_been_played(char *, char *);
 #endif

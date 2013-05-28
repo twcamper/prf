@@ -1,8 +1,8 @@
 #include "random-file.h"
 
-static char *find_file(PrfStack s, FilteredEntryList entries, char **ext, size_t extension_count)
+static char *find_file(PrfStack s, char *log_file,  FilteredEntryList entries, char **ext, size_t extension_count)
 {
-
+  bool rc;
   static ListItem *entry;
   while ((entry = random_item(entries))) {
 
@@ -18,10 +18,14 @@ static char *find_file(PrfStack s, FilteredEntryList entries, char **ext, size_t
       }
 
       /* RECURSION */
-      return find_file(s, entries, ext, extension_count);
+      return find_file(s, log_file,  entries, ext, extension_count);
     }
-    /* we're done: it's a regular file with a good extension */
-    return entry->file_name;
+    if (!(rc = has_been_played(entry->file_name, log_file)))
+      /* we're done: it's a regular file with a good extension */
+      return entry->file_name;
+    else if (rc == -1)
+      /* IO error */
+      return NULL;
   }
 
   if (is_empty(s)) {
@@ -33,7 +37,7 @@ static char *find_file(PrfStack s, FilteredEntryList entries, char **ext, size_t
     /* or it was empty to begin with */
     destroy_list(entries);
     entries = pop(s);
-    return find_file(s, entries, ext, extension_count);
+    return find_file(s, log_file, entries, ext, extension_count);
   }
 }
 
@@ -47,7 +51,7 @@ char *get_random_file(PrfConfig *config)
   }
 
   srand((unsigned int) time(NULL));
-  f = find_file(stack, config->entries, config->ext, config->extension_count);
+  f = find_file(stack, config->log_file, config->entries, config->ext, config->extension_count);
   destroy_stack(stack);
   return f;
 }

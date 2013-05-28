@@ -1,34 +1,61 @@
 #include "played.h"
 
 /* private function prototype declarations */
-static int expand_home_dir(char *);
 static FILE *get_output_stream(char *);
 static int make_dir_p(char *);
 
-int log_as_played(char *file_name, char *log_file)
+bool has_been_played(char *data, char *log_file)
 {
-  /* 
-   * if first dir node in path is ~
-   *    getenv HOME
-   *    prepend to path
-   * if log file does not exist
-   *    create new log file
-   *       shell out to mkdir -p
-   *       handle inheriting file permissions if necessary
-   * fopen(path, "a")
-   *
-   * write line (file_name arg) to end
-   *
-   * close file
-   */
+  /* line from the log file: a file name */
+  char line[FILENAME_MAX + 1];
+  bool played = false;
+  bool read_error = false;
+  FILE *istream;
+  size_t data_len;
 
   /* Quietly exit if there's no log file in the config: */
   /* User does not want to log */
-  if (strlen(log_file) == 0)
-    return 0;
+  if (!log_file)
+    return played;
 
-  if (expand_home_dir(log_file) != 0)
+  errno = 0;
+  if (!(istream = fopen(log_file, "r"))) {
+    /* Quietly exit if this is the first run, and there's no file to read yet */
+    if (errno == ENOENT) {
+      return played;
+    } else {
+      perror(log_file);
+      return -1;
+    }
+  }
+
+  /* if the file is listed in the log, it has been played */
+  data_len = strlen(data);
+  errno = 0;
+  while(fgets(line, FILENAME_MAX, istream)) {
+    /* line read with '\n', so limit the comparison */
+    if (strncmp(line, data, data_len) == 0) {
+      played = true;
+      break;
+    }
+  }
+  if (ferror(istream)) {
+    perror(log_file);
+    read_error = true;
+  }
+  errno = 0;
+  if (fclose(istream) == EOF || read_error) {
+    perror(log_file);
     return -1;
+  }
+  return played;
+}
+int log_as_played(char *file_name, char *log_file)
+{
+  /* Quietly exit if there's no log file in the config: */
+  /* User does not want to log */
+  if (!log_file)
+    return 0;
 
   FILE *ostream;
   if ((ostream = get_output_stream(log_file)) == NULL)
@@ -48,27 +75,6 @@ int log_as_played(char *file_name, char *log_file)
   if (output_error) {
     return -1;
   }
-  return 0;
-}
-static int expand_home_dir(char *filename)
-{
-  char *tilde = strchr(filename, '~');
-  if (tilde) {
-    char *home = getenv("HOME");
-    size_t home_len = strlen(home);
-
-    /* make sure we have room */
-    if (home_len + strlen(filename) > FILENAME_MAX) {
-      errno = ENAMETOOLONG;
-      fprintf(stderr, "%s:%d expand_home_dir() %s: '%s' + '%s'\n", __FILE__, __LINE__, strerror(errno), home, tilde + 1);
-      return -1;
-    }
-    /* shift string down the array to accommadate home path */
-    memmove(filename + home_len, tilde + 1, strlen(tilde + 1));
-    /* copy in home path */
-    strncpy(filename, home, home_len);
-  }
-
   return 0;
 }
 static FILE *get_output_stream(char *filename)
