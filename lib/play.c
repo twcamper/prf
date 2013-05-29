@@ -1,14 +1,7 @@
 #include "play.h"
 
-int play(char *file, PrfConfig *config)
+int play(char *file, char *player)
 {
-  char *player;
-  char *dot = strrchr(file, '.');
-  for (size_t i = 0; i < config->association_count; i++)
-    if (strcmp(dot + 1,  config->associations[i][0]) == 0) {
-      player = config->associations[i][1];
-      break;
-    }
 
   errno = 0;
   pid_t pid = fork();
@@ -24,4 +17,19 @@ int play(char *file, PrfConfig *config)
     }
   }
   return 0;
+}
+char *get_player(char *ext, PrfConfig *config)
+{
+  for (size_t i = 0; i < config->association_count; i++)
+    if (strcmp(ext,  config->associations[i][0]) == 0) {
+      return config->associations[i][1];
+    }
+  fprintf(stderr, "No player for '%s' files\n", ext);
+  return NULL;
+}
+char *get_extension(char *file)
+{
+  static char *dot;
+  dot = strrchr(file, '.');
+  return ++dot;
 }

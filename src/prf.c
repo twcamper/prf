@@ -10,8 +10,12 @@ int main(int argc, char *argv[])
 
   if (file) {
     printf("%s\n", file);
-    if (play(file, &config) == 0)
-      log_as_played(file, config.log_file);
+
+    char *ext    = get_extension(file);
+    char *player = get_player(ext, &config);
+    if (player)
+      if (play(file, player) == 0)
+        log_as_played(file, config.log_file);
   } else
     printf("No files found.\n");
 

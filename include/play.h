@@ -4,5 +4,7 @@
 #include "prf-config.h"
 #include <errno.h>
 
-int play(char *file, PrfConfig *);
+int play(char *file, char *player);
+char *get_player(char *ext, PrfConfig *);
+char *get_extension(char *file);
 #endif
