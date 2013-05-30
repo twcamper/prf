@@ -1,5 +1,6 @@
 #include "play.h"
 #define FLAC "flac"
+#define MP3  "mp3"
 
 int play(char *file, char *player)
 {
@@ -65,11 +66,8 @@ int kill_all(char *player)
 
   return WEXITSTATUS(pid_status);
 }
-FLAC__uint64 get_duration(char *file, char *ext)
+static FLAC__uint64 flac_duration(char *file)
 {
-  if (strcmp(ext, FLAC) != 0)
-    return 0;
-
   FLAC__StreamMetadata md;
   errno = 0;
   if (!FLAC__metadata_get_streaminfo(file, &md)) {
@@ -78,4 +76,41 @@ FLAC__uint64 get_duration(char *file, char *ext)
   }
 
   return (md.data.stream_info.total_samples / md.data.stream_info.sample_rate);
+}
+static long int mp3_duration(char *file)
+{
+  FILE *pipe;
+  char cmd[FILENAME_MAX + 16];
+  static long int seconds;;
+
+  /* quoting file name in case of spaces for sh and bash */
+  sprintf(cmd,"mp3info -p \"%%S\" \"%s\"", file);
+
+  errno = 0;
+  if ((pipe = popen(cmd, "r")) == NULL) {
+    perror("mp3_duration: create pipe");
+    return 1;
+  }
+  errno = 0;
+  if (fscanf(pipe, "%ld", &seconds) != 1) {
+    perror("mp3_duration: read from pipe");
+    seconds = 1;
+  }
+  errno = 0;
+  if (pclose(pipe) == EOF) {
+    perror("mp3_duration: close pipe");
+    seconds = 1;
+  }
+
+  return seconds;
+}
+time_t get_duration(char *file, char *ext)
+{
+  if (strcmp(ext, FLAC) == 0)
+    return (time_t)flac_duration(file);
+
+  if (strcmp(ext, MP3) == 0)
+    return (time_t)mp3_duration(file);
+
+  return 0;
 }

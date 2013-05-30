@@ -11,5 +11,5 @@ int play(char *file, char *player);
 char *get_player(char *ext, PrfConfig *);
 char *get_extension(char *file);
 int kill_all(char *player);
-FLAC__uint64 get_duration(char *file, char *ext);
+time_t get_duration(char *file, char *ext);
 #endif
