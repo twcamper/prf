@@ -74,7 +74,7 @@ FLAC__uint64 get_duration(char *file, char *ext)
   errno = 0;
   if (!FLAC__metadata_get_streaminfo(file, &md)) {
     fprintf(stderr, "%s:%d getting FLAC metadata streaminfo: %s\n", __FILE__, __LINE__, strerror(errno));
-    return -1;
+    return 1;
   }
 
   return (md.data.stream_info.total_samples / md.data.stream_info.sample_rate);
