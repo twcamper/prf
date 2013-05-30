@@ -16,7 +16,7 @@ bin/prf : % : src/prf.o \
 							$(LIBS)/play.o \
 							$(LIBS)/played.o \
 							$(LIBS)/prf-stack.o
-	$(LD) $^ -o $@
+	$(LD) $^ -o $@ -lFLAC
 
 src/prf.o: %.o : %.c \
 	               $(INCS)/random-file.h \

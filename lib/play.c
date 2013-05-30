@@ -1,4 +1,5 @@
 #include "play.h"
+#define FLAC "flac"
 
 int play(char *file, char *player)
 {
@@ -63,4 +64,18 @@ int kill_all(char *player)
   }
 
   return WEXITSTATUS(pid_status);
+}
+FLAC__uint64 get_duration(char *file, char *ext)
+{
+  if (strcmp(ext, FLAC) != 0)
+    return 0;
+
+  FLAC__StreamMetadata md;
+  errno = 0;
+  if (!FLAC__metadata_get_streaminfo(file, &md)) {
+    fprintf(stderr, "%s:%d getting FLAC metadata streaminfo: %s\n", __FILE__, __LINE__, strerror(errno));
+    return -1;
+  }
+
+  return (md.data.stream_info.total_samples / md.data.stream_info.sample_rate);
 }
