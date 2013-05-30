@@ -15,7 +15,10 @@ int main(int argc, char *argv[])
 
     printf("%s: %lld\n", file, duration);
 
-    if (player && (kill_all(player) == 0)) {
+    if (player && (kill_all(player) == 0) && duration != 1) {
+      if (duration && (register_signal_handler(SIGALRM, kill_player) == 0))
+        alarm(duration);
+
       if (play(file, player) == 0)
         log_as_played(file, config.log_file);
     }
