@@ -8,6 +8,7 @@
 #define ITEM_DELIMITERS ":,;"
 #define LINE_MAX 1024
 #define LOG_FILE "log"
+#define LOG_LIMIT "log-limit"
 #define PATH "path"
 #define PATTERN "pattern"
 
@@ -48,7 +49,10 @@ static size_t add_associations(PrfConfig *config, char *s)
 static void exit_error(char *f, int l, char *msg)
 {
   fprintf(stderr, "%s:%d\t", f, l);
-  perror(msg);
+  if (errno)
+    perror(msg);
+  else
+    printf("%s\n", msg);
   exit(EXIT_FAILURE);
 }
 static char * value_for_key(char *s, char *key)
@@ -145,7 +149,7 @@ static int read_config_file(char *filename, PrfConfig *config)
   }
 
   char *l;
-  while ((l = fgets(line, sizeof(line), fp)) != NULL) {
+  for (int line_no = 1; (l = fgets(line, sizeof(line), fp)); line_no++) {
     /* ignore leading whitespace */
     while (*l && *l != '\n' && isspace(*l))
       l++;
@@ -181,6 +185,19 @@ static int read_config_file(char *filename, PrfConfig *config)
       }
     }
 
+    if (!config->log_file_limit) {
+      if (strncmp(LOG_LIMIT, l, strlen(LOG_LIMIT)) == 0) {
+        l = value_for_key(l, LOG_LIMIT);
+        if (*l == '\0') {
+          read_error = true;
+          break;
+        }
+        if (to_valid_uint(&config->log_file_limit, l, strlen(l)) != 0)
+          exit_error(filename, line_no, "converting 'log_file_limit'");
+        continue;
+      }
+    }
+
     if (config->entries == NULL) {
       if (strncmp(PATH, l, 4) == 0) {
         l = value_for_key(l, PATH);
@@ -190,7 +207,7 @@ static int read_config_file(char *filename, PrfConfig *config)
         }
         /* break up paths, feed to vector_to_filtered_entry_list */
         if (append_delimited_list(&result, l) != 0)
-          exit_error(__FILE__, __LINE__, "empty 'path' value string");
+          exit_error(filename, line_no, "empty 'path' value string");
         continue;
       }
 
@@ -205,7 +222,7 @@ static int read_config_file(char *filename, PrfConfig *config)
         rc = glob(l, GLOB_APPEND|GLOB_BRACE|GLOB_TILDE|GLOB_ERR, NULL, &result);
         if (rc != 0 || result.gl_pathc == 0) {
           /* not getting GLOB_NOMATCH, so resort to testing count of paths found */
-          exit_error(__FILE__, __LINE__,  l);
+          exit_error(filename, line_no,  l);
         }
         continue;
       }
@@ -218,7 +235,7 @@ static int read_config_file(char *filename, PrfConfig *config)
           break;
         }
         if (add_associations(config, l) < 1) {
-          fprintf(stderr, "%s:%d bad association line\n", __FILE__, __LINE__);
+          fprintf(stderr, "%s:%d bad association line\n", filename, line_no);
           read_error = true;
           break;
         }

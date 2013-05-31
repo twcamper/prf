@@ -12,6 +12,7 @@ all: bin/prf
 bin/prf : % : src/prf.o \
 	            $(LIBS)/random-file.o \
 							$(LIBS)/prf-config.o \
+							$(LIBS)/prf-validation.o \
 							$(LIBS)/filtered-entry-list.o \
 							$(LIBS)/play.o \
 							$(LIBS)/played.o \
@@ -21,6 +22,7 @@ bin/prf : % : src/prf.o \
 src/prf.o: %.o : %.c \
 	               $(INCS)/random-file.h \
 								 $(INCS)/prf-config.h \
+								 $(INCS)/prf-validation.h \
 								 $(INCS)/filtered-entry-list.h \
 								 $(INCS)/play.h \
 								 $(INCS)/played.h \

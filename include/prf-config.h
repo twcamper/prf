@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "filtered-entry-list.h"
+#include "prf-validation.h"
 
 #define MAX_PATHS 1024      /* researching system defined limit for bash */
 #define MAX_EXTENSIONS 256
@@ -21,6 +22,7 @@ typedef struct prf_config {
   size_t association_count;
   char *associations[MAX_EXTENSIONS][2];
   char *log_file;
+  uintmax_t log_file_limit;
   FilteredEntryList  entries;
 } PrfConfig;
 
