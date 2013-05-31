@@ -15,4 +15,5 @@ int kill_all(char *player);
 time_t get_duration(char *file, char *ext);
 int register_signal_handler(int signal, void (*handler)(int));
 void kill_player(int signal);
+void catch_alarm(int signal);
 #endif

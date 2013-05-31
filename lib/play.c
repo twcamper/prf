@@ -103,6 +103,14 @@ time_t get_duration(char *file, char *ext)
   return 0;
 }
 
+void catch_alarm(int signal)
+{
+  errno = 0;
+  if (raise(SIGINT) == -1) {
+    printf("%d:\t", signal);
+    perror("catch_alarm");
+  }
+}
 void kill_player(int signal)
 {
   errno = 0;
