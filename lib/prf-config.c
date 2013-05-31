@@ -193,7 +193,7 @@ static int read_config_file(char *filename, PrfConfig *config)
           break;
         }
         if (to_valid_uint(&config->log_file_limit, l, strlen(l)) != 0)
-          exit_error(filename, line_no, "converting 'log_file_limit'");
+          exit_error(filename, line_no, "Error converting 'log_file_limit'");
         continue;
       }
     }
