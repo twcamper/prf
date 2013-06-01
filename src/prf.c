@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
     rc = EXIT_FAILURE;
   }
 
+  free(file);
   destroy_configuration(&config);
   return rc;
 }

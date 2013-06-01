@@ -22,8 +22,9 @@ static char *find_file(PrfStack s, char *log_file,  FilteredEntryList entries, c
     }
     if (!(rc = has_been_played(entry->file_name, log_file))) {
       /* we're done: it's a regular file with a good extension */
+      char *found_file = strdup(entry->file_name);
       destroy_list(entries);
-      return entry->file_name;
+      return found_file;
     } else if (rc == -1)
       /* IO error */
       return NULL;
