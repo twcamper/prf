@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <glob.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +32,7 @@ typedef struct prf_config {
   size_t association_count;
   char *associations[MAX_EXTENSIONS][2];
   char *log_file;
+  bool print;
   uintmax_t log_file_limit;
   FilteredEntryList  entries;
 } PrfConfig;

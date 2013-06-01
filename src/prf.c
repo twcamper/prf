@@ -20,7 +20,8 @@ int main(int argc, char *argv[])
     char *player = get_player(ext, &config);
     unsigned long long duration = get_duration(file, ext);
 
-    /* printf("%s: %lld\n", file, duration); */
+    if (config.print)
+      printf("%s: %lld\n", file, duration);
 
     if (player && (kill_all(player) == 0) && duration != 1) {
       if (duration && (register_signal_handler(SIGALRM, catch_alarm) == 0))

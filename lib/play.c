@@ -151,7 +151,7 @@ static long int mp3_duration(char *file)
 {
   FILE *pipe;
   char cmd[FILENAME_MAX + 16];
-  static long int seconds;;
+  static long int seconds;
 
   /* quoting file name in case of spaces for sh and bash */
   sprintf(cmd,"mp3info -p \"%%S\" \"%s\"", file);

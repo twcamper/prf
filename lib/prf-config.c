@@ -11,6 +11,7 @@
 #define LOG_LIMIT "log-limit"
 #define PATH "path"
 #define PATTERN "pattern"
+#define PRINT "print"
 
 /*
  * private function declarations
@@ -198,6 +199,18 @@ static int read_config_file(char *filename, PrfConfig *config)
       }
     }
 
+    if (config->print == 0) {
+      if (strncmp(PRINT, l, 5) == 0) {
+        l = value_for_key(l, PRINT);
+        if (*l == '\0') {
+          read_error = true;
+          break;
+        }
+        if (strcmp(l,"true") == 0)
+          config->print = true;
+        continue;
+      }
+    }
     if (config->entries == NULL) {
       if (strncmp(PATH, l, 4) == 0) {
         l = value_for_key(l, PATH);
@@ -269,7 +282,7 @@ PrfConfig read_configuration(int *argc, char **argv[])
   char *config_file = "\0";
 
   if (*argc > 1) {
-    while ((opt_ch = getopt(*argc, *argv, "e:f:")) != EOF) {
+    while ((opt_ch = getopt(*argc, *argv, "e:f:p")) != EOF) {
       switch(opt_ch) {
         case 'e':
           config.extension_count = parse_delimited_list(optarg, config.ext);
@@ -277,6 +290,9 @@ PrfConfig read_configuration(int *argc, char **argv[])
         case 'f':
           if (expand_home_dir(optarg, &config_file) != 0)
             exit(EXIT_FAILURE);
+          break;
+        case 'p':
+          config.print = true;
           break;
         default:
           fprintf(stderr, "Unknown option: '%c'\n", opt_ch);
