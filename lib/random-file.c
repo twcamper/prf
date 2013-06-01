@@ -20,10 +20,11 @@ static char *find_file(PrfStack s, char *log_file,  FilteredEntryList entries, c
       /* RECURSION */
       return find_file(s, log_file,  entries, ext, extension_count);
     }
-    if (!(rc = has_been_played(entry->file_name, log_file)))
+    if (!(rc = has_been_played(entry->file_name, log_file))) {
       /* we're done: it's a regular file with a good extension */
+      destroy_list(entries);
       return entry->file_name;
-    else if (rc == -1)
+    } else if (rc == -1)
       /* IO error */
       return NULL;
   }
