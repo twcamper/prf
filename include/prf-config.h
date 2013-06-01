@@ -1,6 +1,15 @@
 #ifndef PRF_CONFIG_H
 #define PRF_CONFIG_H
 
+#if defined(__linux__) || defined(__linux) || defined(__gnu_linux__)
+  #ifndef _BSD_SOURCE
+    #define _BSD_SOURCE 1           /* strdup in string.h */
+  #endif
+  #ifndef _POSIX_C_SOURCE
+    #define _POSIX_C_SOURCE 2       /* getopt, etc. in unistd.h */
+  #endif
+#endif
+
 #include <ctype.h>
 #include <errno.h>
 #include <glob.h>
