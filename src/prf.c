@@ -6,6 +6,7 @@
 
 int main(int argc, char *argv[])
 {
+  int rc = 0;
   PrfConfig config = read_configuration(&argc, &argv);
   char *file = get_random_file(&config);
 
@@ -28,9 +29,11 @@ int main(int argc, char *argv[])
       if (play(file, player) == 0)
         log_as_played(file, &config);
     }
-  } else
+  } else {
     printf("No files found.\n");
+    rc = EXIT_FAILURE;
+  }
 
   destroy_configuration(&config);
-  return 0;
+  return rc;
 }
