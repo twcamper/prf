@@ -8,7 +8,8 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "prf-config.h"
 
-int log_as_played(char *, char *);
+int log_as_played(char *data, PrfConfig *);
 bool has_been_played(char *, char *);
 #endif

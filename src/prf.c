@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
         alarm(duration + 3);  /* pad the end a little */
 
       if (play(file, player) == 0)
-        log_as_played(file, config.log_file);
+        log_as_played(file, &config);
     }
   } else
     printf("No files found.\n");

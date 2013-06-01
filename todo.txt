@@ -1,14 +1,10 @@
 Usage Note: Don't use FILENAME_MAX as the size of an array in which to store a file name! You can't possibly make an array that big! Use dynamic allocation (see Memory Allocation) instead.
     - filtered entry list parent dir path
 
-Log file will be a simple queue:
-    - configurable threshhold (e.g., 200 or 500 files)
-    - logging algorithm
-      1) append filename
-      2) read in file
-      3) count newlines
-      4) if threshhold exceeded, truncate file, write out everything from the second line on
+Error message module
+    refactor out all the duplicate error messages
 
+make install target
 
 Note libFLAC installation woes somewhere:
     on Snow Leopard:

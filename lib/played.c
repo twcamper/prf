@@ -3,6 +3,7 @@
 /* private function prototype declarations */
 static FILE *get_output_stream(char *);
 static int make_dir_p(char *);
+static int remove_oldest_lines(char *log_file, uintmax_t limit);
 
 bool has_been_played(char *data, char *log_file)
 {
@@ -50,31 +51,40 @@ bool has_been_played(char *data, char *log_file)
   }
   return played;
 }
-int log_as_played(char *file_name, char *log_file)
+int log_as_played(char *data, PrfConfig *config)
 {
   /* Quietly exit if there's no log file in the config: */
   /* User does not want to log */
-  if (!log_file)
+  if (!config->log_file)
     return 0;
 
   FILE *ostream;
-  if ((ostream = get_output_stream(log_file)) == NULL)
+  if ((ostream = get_output_stream(config->log_file)) == NULL)
     return -1;
 
-  size_t output_len = strlen(file_name);
+  /*
+   * Append our data (a file name)
+   */
+  size_t output_len = strlen(data);
   bool output_error = false;
 
-  if ((size_t)fprintf(ostream, "%s\n", file_name) < output_len) {
-    fprintf(stderr, "%s:%d Error writing to %s\n", __FILE__, __LINE__,  log_file);
+  if ((size_t)fprintf(ostream, "%s\n", data) < output_len) {
+    fprintf(stderr, "%s:%d Error writing to %s\n", __FILE__, __LINE__,  config->log_file);
     output_error = true;
   }
+
   if (fclose(ostream) == EOF) {
-    fprintf(stderr, "%s:%d Error closeing %s\n", __FILE__, __LINE__,  log_file);
+    fprintf(stderr, "%s:%d Error closeing %s\n", __FILE__, __LINE__,  config->log_file);
     output_error = true;
   }
   if (output_error) {
     return -1;
   }
+
+  /* remove lines from the top of the file, if necessary */
+  if (remove_oldest_lines(config->log_file, config->log_file_limit) != 0)
+    return -1;
+
   return 0;
 }
 static FILE *get_output_stream(char *filename)
@@ -130,4 +140,110 @@ static int make_dir_p(char *dir_path)
     return -1;
   }
   return 0;
+}
+static int remove_oldest_lines(char *log_file, uintmax_t limit)
+{
+  struct stat fs;
+  char *buffer;
+  FILE *io;
+  int rc = 0;
+
+  if (!limit)
+    return rc;
+
+  /* stat file to get size */
+  errno = 0;
+  if (stat(log_file, &fs) != 0) {
+    fprintf(stderr, "%s:%d Error stating %s\n%s\n", __FILE__, __LINE__,  log_file, strerror(errno));
+    return -1;
+  }
+
+  /* allocate a buffer for the contents */
+  errno = 0;
+  if (!(buffer = malloc(fs.st_size + 1))) {
+    perror("allocating memory to remove oldest lines");
+    return -1;
+  }
+
+  /* open the stream for Read/Write */
+  errno = 0;
+  if (!(io = fopen(log_file, "a+"))) {
+    fprintf(stderr, "%s:%d Error opening %s\n", __FILE__, __LINE__,  log_file);
+    free(buffer);
+    return -1;
+  }
+
+  /* seek the beginning so we can read now */
+  errno = 0;
+  if (fseek(io, 0L, SEEK_SET) != 0) {
+    fprintf(stderr, "%s:%d Error seeking file start %s\n%s\n", __FILE__, __LINE__,  log_file, strerror(errno));
+    rc = -1;
+    goto close;
+  }
+  /* read the whole file */
+  errno = 0;
+  size_t input_size = (size_t)fs.st_size;
+  if (fread(buffer, sizeof(char), input_size, io) < input_size) {
+    fprintf(stderr, "%s:%d Error reading file %s\n%s\n", __FILE__, __LINE__,  log_file, strerror(errno));
+    rc = -1;
+    goto close;
+  }
+  /* Terminate the string, because fread block IO
+   * doesn't know or care about "strings"
+   */
+  buffer[fs.st_size] = '\0';
+
+  /* count the newlines */
+  int newlines = 0;
+  char *p = buffer;
+  while ((p = strchr(p, '\n'))) {
+    p++;
+    newlines++;
+  }
+
+  /*
+   * rewrite the file
+   * if there are extra lines to be
+   * removed from the beginning
+   */
+  int extra_lines =  newlines - limit;
+  if (extra_lines > 0) {
+    /* find start of first line that we want to keep */
+    for (newlines = 0, p = buffer; newlines < extra_lines; newlines++, p++)
+      p = strchr(p, '\n');
+
+    /* seek the beginning so we can write now */
+    errno = 0;
+    if (fseek(io, 0L, SEEK_SET) != 0) {
+      fprintf(stderr, "%s:%d Error seeking file start %s\n%s\n", __FILE__, __LINE__,  log_file, strerror(errno));
+      rc = -1;
+      goto close;
+    }
+
+    /* empty the file */
+    errno = 0;
+    if (ftruncate(fileno(io), 0) != 0) {
+      fprintf(stderr, "%s:%d Error truncating file %s\n%s\n", __FILE__, __LINE__,  log_file, strerror(errno));
+      rc = -1;
+      goto close;
+    }
+
+    /* write the newer lines */
+    errno = 0;
+    size_t output_size = fs.st_size - (p - buffer);
+    if ((fwrite(p, sizeof(char), output_size, io)) < output_size) {
+      fprintf(stderr, "%s:%d Error writing %s\n%s\n", __FILE__, __LINE__,  log_file, strerror(errno));
+      rc = -1;
+    }
+  }
+
+close:
+
+  if (fclose(io) == EOF) {
+    fprintf(stderr, "%s:%d Error closeing %s\n", __FILE__, __LINE__, log_file);
+    rc = -1;
+  }
+
+  free(buffer);
+  return rc;
 }
